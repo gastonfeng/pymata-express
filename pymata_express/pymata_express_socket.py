@@ -18,7 +18,6 @@
 
 
 import asyncio
-import sys
 
 
 # noinspection PyStatementEffect,PyUnresolvedReferences,PyUnresolvedReferences
@@ -45,8 +44,8 @@ class PymataExpressSocket:
                 self.ip_address, self.ip_port)
             print(f'Successfully connected to: {self.ip_address}:{self.ip_port}')
         except OSError:
-            print("Can't open connection to " + self.ip_address)
-            sys.exit(0)
+            raise Exception("Can't open connection to " + self.ip_address)
+            # sys.exit(0)
 
     async def write(self, data):
         """

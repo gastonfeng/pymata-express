@@ -18,15 +18,16 @@
 import asyncio
 import sys
 import time
-# noinspection PyPackageRequirements
-from serial.tools import list_ports
+
 # noinspection PyPackageRequirementscd
 from serial.serialutil import SerialException
+# noinspection PyPackageRequirements
+from serial.tools import list_ports
 
-from pymata_express.pin_data import PinData
-from pymata_express.private_constants import PrivateConstants
-from pymata_express.pymata_express_serial import PymataExpressSerial
-from pymata_express.pymata_express_socket import PymataExpressSocket
+from pin_data import PinData
+from private_constants import PrivateConstants
+from pymata_express_serial import PymataExpressSerial
+from pymata_express_socket import PymataExpressSocket
 
 
 class PymataExpress:
@@ -1387,8 +1388,12 @@ class PymataExpress:
             if self.close_loop_on_shutdown:
                 self.loop.stop()
             await self.send_reset()
-            await self.serial_port.reset_input_buffer()
-            await self.serial_port.close()
+            if not self.ip_address:
+                await self.serial_port.reset_input_buffer()
+                await self.serial_port.close()
+            # else:
+            #     await self.socket_transport.reset_input_buffer()
+            #     await self.socket_transport.close()
             if self.close_loop_on_shutdown:
                 self.loop.close()
         except (RuntimeError, SerialException):
@@ -1470,7 +1475,10 @@ class PymataExpress:
                     else:
                         next_command_byte = await self.socket_transport.read()
                     sysex.append(next_command_byte)
-                await self.command_dictionary[sysex[0]](sysex)
+                fn = self.command_dictionary.get(sysex[0])
+                if not fn:
+                    continue
+                await fn(sysex)
                 sysex = []
             # if this is an analog message, process it.
             elif 0xE0 <= next_command_byte <= 0xEF:
